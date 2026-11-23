@@ -1,4 +1,4 @@
-import { eventosImportantes, type ClaseEvento } from '../lib/eventos';
+import { eventosImportantes, UMBRALES, type ClaseEvento } from '../lib/eventos';
 import { hora, porcentaje } from '../lib/formato';
 import type { MomentoHistorial } from '../lib/scoring';
 import { MarcaCorregido } from './MarcaCorregido';
@@ -6,8 +6,8 @@ import { MarcaCorregido } from './MarcaCorregido';
 const DESTACADOS: readonly ClaseEvento[] = ['liderato', 'victoria'];
 
 /** La noche contada hora a hora (lo más reciente arriba): cambios de líder, recortes, saltos, victoria… sin saturar. */
-export function EventosImportantes({ historial }: { historial: MomentoHistorial[] }) {
-  const grupos = eventosImportantes(historial).reverse();
+export function EventosImportantes({ historial, cerrada }: { historial: MomentoHistorial[]; cerrada: boolean }) {
+  const grupos = eventosImportantes(historial, UMBRALES, cerrada).reverse();
   if (grupos.length === 0) return null;
 
   return (

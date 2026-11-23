@@ -28,8 +28,8 @@ const dato = (r: number, extra: Partial<Snapshot> = {}): Snapshot => {
   };
 };
 
-const textos = (porras: Porra[], datos: Snapshot[], u = UMBRALES) =>
-  eventosImportantes(calcularHistorial(porras, datos), u).map((g) => g.eventos.map((e) => e.texto));
+const textos = (porras: Porra[], datos: Snapshot[], u = UMBRALES, cerrada = false) =>
+  eventosImportantes(calcularHistorial(porras, datos), u, cerrada).map((g) => g.eventos.map((e) => e.texto));
 
 describe('eventos importantes', () => {
   it('el primer dato fija quién lidera', () => {
@@ -78,8 +78,8 @@ describe('eventos importantes', () => {
     expect(textos(porras, [dato(0), dato(40)], { ...UMBRALES, maxPorHora: 1 })[1]).toEqual(['Eva pasa a liderar']);
   });
 
-  it('resultado final: victoria, escaños clavados y participación', () => {
-    const t = textos([porra('Ana', 0, 70), porra('Bea', 10, 71.5), porra('Carla', 30, 72)], [dato(4), dato(0, { escrutado: 100 })]);
+  it('al cerrar la porra: victoria, escaños clavados y participación', () => {
+    const t = textos([porra('Ana', 0, 70), porra('Bea', 10, 71.5), porra('Carla', 30, 72)], [dato(4), dato(0, { escrutado: 100 })], UMBRALES, true);
     expect(t[1]).toEqual([
       'Ana gana la porra con 0 de desviación, 21,5 menos que Bea',
       'Escaños clavados: Ana (PP, PSOE, Vox, FA y Otros), Bea (PSOE, Vox y FA) y Carla (PSOE, Vox y FA)',
@@ -87,8 +87,18 @@ describe('eventos importantes', () => {
     ]);
   });
 
+  it('llegar al 100 % sin cerrar la porra no da la victoria', () => {
+    const t = textos([porra('Ana', 0), porra('Bea', 10)], [dato(4), dato(0, { escrutado: 100 })]);
+    expect(t.flat().some((x) => x.includes('gana la porra'))).toBe(false);
+  });
+
+  it('se puede cerrar antes del 100 % (escrutinio atascado en 99,9x %)', () => {
+    const t = textos([porra('Ana', 0), porra('Bea', 10)], [dato(4), dato(0, { escrutado: 99.97 })], UMBRALES, true);
+    expect(t[1][0]).toBe('Ana gana la porra con 0 de desviación, 20 menos que Bea');
+  });
+
   it('victoria compartida', () => {
-    const t = textos([porra('Ana', 5), porra('Bea', -5)], [dato(0, { escrutado: 100 })]);
+    const t = textos([porra('Ana', 5), porra('Bea', -5)], [dato(0, { escrutado: 100 })], UMBRALES, true);
     expect(t[0][0]).toBe('Ana y Bea empatan en cabeza y comparten la victoria (10 de desviación)');
   });
 
@@ -97,7 +107,7 @@ describe('eventos importantes', () => {
       { ...porra('Ana', 0), escanos: { pp: 121, psoe: 109, vox: 61, fa: 19, otros: 40 } },
       { ...porra('Bea', 0, 75), escanos: { pp: 140, psoe: 100, vox: 55, fa: 25, otros: 30 } },
     ];
-    const t = textos(p, [dato(0, { escrutado: 100 })]);
+    const t = textos(p, [dato(0, { escrutado: 100 })], UMBRALES, true);
     expect(t[0]).toContain('Ana clava los escaños del resto de partidos (40)');
   });
 

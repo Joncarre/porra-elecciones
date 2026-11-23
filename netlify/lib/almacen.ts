@@ -3,8 +3,9 @@
  * en los tests, un almacén en memoria con el mismo contrato.
  */
 import { getStore } from '@netlify/blobs';
+import { ESTADO_INICIAL, normalizarEstado } from '../../src/lib/estado';
 import { ordenarSnapshots } from '../../src/lib/snapshots';
-import type { Snapshot } from '../../src/types';
+import type { EstadoPorra, Snapshot } from '../../src/types';
 
 export const NOMBRE_STORE = 'porra-29n';
 export const CLAVE_SNAPSHOTS = 'snapshots';
@@ -39,6 +40,39 @@ export function almacenBlobs(): Almacen {
       const r = await store.setJSON(CLAVE_SNAPSHOTS, datos, opciones);
       return r.modified;
     },
+  };
+}
+
+/** Estado del escrutinio (iniciado / cerrado), en la clave "estado" del mismo store. */
+export const CLAVE_ESTADO = 'estado';
+
+export interface AlmacenEstado {
+  leer(): Promise<EstadoPorra>;
+  escribir(estado: EstadoPorra): Promise<void>;
+}
+
+export function almacenEstadoBlobs(): AlmacenEstado {
+  const store = getStore({ name: NOMBRE_STORE, consistency: 'strong' });
+  return {
+    async leer() {
+      return normalizarEstado(await store.get(CLAVE_ESTADO, { type: 'json' }));
+    },
+    async escribir(estado) {
+      await store.setJSON(CLAVE_ESTADO, estado);
+    },
+  };
+}
+
+export function almacenEstadoMemoria(inicial: EstadoPorra = ESTADO_INICIAL): AlmacenEstado & { actual(): EstadoPorra } {
+  let estado = inicial;
+  return {
+    async leer() {
+      return estado;
+    },
+    async escribir(nuevo) {
+      estado = nuevo;
+    },
+    actual: () => estado,
   };
 }
 

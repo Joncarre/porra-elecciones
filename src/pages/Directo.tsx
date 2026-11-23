@@ -5,8 +5,8 @@ import { EventosImportantes } from '../components/EventosImportantes';
 import { UltimoResultado } from '../components/UltimoResultado';
 import type { EstadoCarga } from '../hooks/useSnapshots';
 import { coloresPorPersona } from '../lib/colores';
-import { esFinal, type MomentoHistorial } from '../lib/scoring';
-import type { Porra } from '../types';
+import type { MomentoHistorial } from '../lib/scoring';
+import type { Fase, Porra } from '../types';
 
 // La gráfica (Recharts) pesa: se descarga aparte, solo cuando hay datos que dibujar.
 const Evolucion = lazy(() => import('../components/Evolucion').then((m) => ({ default: m.Evolucion })));
@@ -14,11 +14,12 @@ const Evolucion = lazy(() => import('../components/Evolucion').then((m) => ({ de
 type Props = {
   porras: readonly Porra[];
   historial: MomentoHistorial[];
+  fase: Fase;
   estado: EstadoCarga;
   error: string | null;
 };
 
-export function Directo({ porras, historial, estado, error }: Props) {
+export function Directo({ porras, historial, fase, estado, error }: Props) {
   // Resaltado compartido entre la clasificación y la gráfica.
   const [hover, setHover] = useState<string | null>(null);
   const [fijado, setFijado] = useState<string | null>(null);
@@ -28,14 +29,15 @@ export function Directo({ porras, historial, estado, error }: Props) {
   if (estado === 'cargando' && historial.length === 0) {
     return <p className="pt-10 font-mono text-[12px] text-secundario">Cargando…</p>;
   }
-  if (historial.length === 0) return <AntesDeDatos porras={porras} error={error} />;
+  if (historial.length === 0) return <AntesDeDatos porras={porras} fase={fase} error={error} />;
 
   const actual = historial[historial.length - 1];
-  const final = esFinal(actual.snapshot);
+  // El resultado es final cuando el administrador pulsa "Escrutinio terminado".
+  const final = fase === 'cerrada';
 
   return (
     <>
-      <UltimoResultado snapshot={actual.snapshot} />
+      <UltimoResultado snapshot={actual.snapshot} final={final} />
       <Clasificacion
         momento={actual}
         final={final}
@@ -55,7 +57,7 @@ export function Directo({ porras, historial, estado, error }: Props) {
           onFijar={(id) => setFijado((f) => (f === id ? null : id))}
         />
       </Suspense>
-      <EventosImportantes historial={historial} />
+      <EventosImportantes historial={historial} cerrada={final} />
     </>
   );
 }

@@ -2,16 +2,20 @@ import { BLOQUES } from '../config/eleccion';
 import { porcentaje } from '../lib/formato';
 import { avisoSuma } from '../lib/porras';
 import { ordenAlfabetico } from '../lib/scoring';
-import type { Porra } from '../types';
+import { siguienteFranja } from '../lib/tiempo';
+import type { Fase, Porra } from '../types';
 import { BarraEscanos } from './BarraEscanos';
 
 /** Directo antes del primer dato: las porras en orden alfabético. */
-export function AntesDeDatos({ porras, error }: { porras: readonly Porra[]; error: string | null }) {
+export function AntesDeDatos({ porras, fase, error }: { porras: readonly Porra[]; fase: Fase; error: string | null }) {
+  const primerDato = siguienteFranja(new Date().toISOString());
   return (
     <>
       <section className="pt-6">
         <p className="max-w-[34rem] text-[16px] leading-relaxed text-secundario">
-          Las urnas cierran el domingo 29 a las 20:00. Los resultados se actualizarán cada hora durante el escrutinio.
+          {fase === 'espera'
+            ? 'Las urnas cierran el domingo 29 a las 20:00. Los resultados se actualizarán cada hora durante el escrutinio.'
+            : `El escrutinio ha empezado. ${primerDato ? `El primer dato llegará hacia las ${primerDato.etiqueta}; después, ` : 'Los resultados se actualizarán '}uno cada hora.`}
         </p>
         {error && (
           <p role="alert" className="mt-3 font-mono text-[12px] text-error">

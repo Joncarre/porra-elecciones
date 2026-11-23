@@ -1,5 +1,5 @@
 /** Cliente de la API (Netlify Functions). */
-import type { EntradaSnapshot, Snapshot } from '../types';
+import type { AccionEstado, EntradaSnapshot, EstadoPorra, Snapshot } from '../types';
 
 export class ErrorApi extends Error {
   constructor(
@@ -61,3 +61,12 @@ export const borrarSnapshot = (token: string, id: string) =>
 
 export const borrarTodos = (token: string) =>
   pedir<void>('/api/snapshots', { method: 'DELETE', headers: conToken(token) });
+
+export const obtenerEstado = () => pedir<EstadoPorra>('/api/estado');
+
+export const cambiarEstado = (token: string, accion: AccionEstado) =>
+  pedir<EstadoPorra>('/api/estado', {
+    method: 'POST',
+    headers: conToken(token, JSON_CT),
+    body: JSON.stringify({ accion }),
+  });

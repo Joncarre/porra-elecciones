@@ -36,6 +36,19 @@ export type Snapshot = {
   nota?: string;
 };
 
+/** Cuándo empezó y cuándo se cerró el escrutinio (lo marca el administrador). */
+export type EstadoPorra = {
+  /** ISO, al pulsar "Iniciar escrutinio" (o al meter el primer dato). */
+  iniciadoEn: string | null;
+  /** ISO, al pulsar "Escrutinio terminado": desde ahí, el último dato es el resultado final. */
+  cerradoEn: string | null;
+};
+
+export type AccionEstado = 'iniciar' | 'cerrar' | 'reabrir' | 'reiniciar';
+
+/** espera: antes de empezar · en-curso: escrutinio abierto · cerrada: resultado final. */
+export type Fase = 'espera' | 'en-curso' | 'cerrada';
+
 /** Lo que el administrador (o una fuente automática futura) envía para crear o editar un snapshot. */
 export type EntradaSnapshot = {
   momento: string;

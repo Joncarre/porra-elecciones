@@ -1,13 +1,11 @@
 import { BLOQUES } from '../config/eleccion';
 import { hora, numero, porcentaje } from '../lib/formato';
-import { esFinal } from '../lib/scoring';
 import type { Snapshot } from '../types';
 import { BarraEscanos } from './BarraEscanos';
 import { MarcaCorregido } from './MarcaCorregido';
 
 /** Franja con el último resultado: barra de 350 escaños, cifras, participación y escrutado. */
-export function UltimoResultado({ snapshot }: { snapshot: Snapshot }) {
-  const final = esFinal(snapshot);
+export function UltimoResultado({ snapshot, final }: { snapshot: Snapshot; final: boolean }) {
   const titulo = final ? 'Resultado final' : snapshot.tipo === 'sondeo' ? 'Sondeo' : 'Último dato';
 
   return (

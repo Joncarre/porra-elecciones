@@ -9,7 +9,7 @@
 import { BLOQUES } from '../config/eleccion';
 import { numero, porcentaje } from './formato';
 import { deArticulo } from './frases';
-import { esFinal, textoCambioLider, type FilaClasificacion, type MomentoHistorial } from './scoring';
+import { textoCambioLider, type FilaClasificacion, type MomentoHistorial } from './scoring';
 
 export type ClaseEvento =
   | 'liderato'
@@ -129,13 +129,17 @@ function masCercaParticipacion(m: MomentoHistorial): Evento | null {
   };
 }
 
-export function eventosImportantes(historial: readonly MomentoHistorial[], u = UMBRALES): GrupoEventos[] {
+/**
+ * @param cerrada true cuando el administrador ha pulsado "Escrutinio terminado":
+ *   el último dato es el resultado final (victoria, escaños clavados…).
+ */
+export function eventosImportantes(historial: readonly MomentoHistorial[], u = UMBRALES, cerrada = false): GrupoEventos[] {
   const grupos: GrupoEventos[] = [];
 
   historial.forEach((cur, i) => {
     const prev = i > 0 ? historial[i - 1] : undefined;
     const nombre = (id: string) => cur.clasificacion.find((f) => f.porra.id === id)?.porra.nombre ?? id;
-    const final = esFinal(cur.snapshot) && !(prev && esFinal(prev.snapshot));
+    const final = cerrada && i === historial.length - 1;
     const candidatos: Evento[] = [];
     let nuevosLideres: string[] = [];
 

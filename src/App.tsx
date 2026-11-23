@@ -5,6 +5,7 @@ import { PORRAS } from './data/porras';
 import { RUTAS, useRuta } from './hooks/useRuta';
 import { useSesion } from './hooks/useSesion';
 import { useSnapshots } from './hooks/useSnapshots';
+import { faseDe } from './lib/estado';
 import { calcularHistorial } from './lib/scoring';
 import { Directo } from './pages/Directo';
 
@@ -13,10 +14,11 @@ const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin
 
 export function App() {
   const { ruta, navegar } = useRuta();
-  const { snapshots, estado, error, recargar } = useSnapshots();
+  const { snapshots, estadoPorra, estado, error, recargar } = useSnapshots();
   const sesion = useSesion();
   const historial = useMemo(() => calcularHistorial(PORRAS, snapshots), [snapshots]);
   const ultimo = historial.at(-1)?.snapshot;
+  const fase = faseDe(estadoPorra, snapshots.length > 0);
   const conSesion = sesion.token !== null;
 
   useEffect(() => {
@@ -40,17 +42,20 @@ export function App() {
         conSesion={conSesion}
         onIniciarSesion={() => navegar(RUTAS.admin)}
         ultimo={ultimo}
+        fase={fase}
         estado={estado}
         error={error}
       />
       <main className="mx-auto w-full max-w-[720px] px-4">
-        {ruta === 'directo' && <Directo porras={PORRAS} historial={historial} estado={estado} error={error} />}
+        {ruta === 'directo' && <Directo porras={PORRAS} historial={historial} fase={fase} estado={estado} error={error} />}
         {ruta === 'admin' && (
           <Suspense fallback={<p className="pt-10 font-mono text-[12px] text-secundario">Cargando…</p>}>
             <Admin
               porras={PORRAS}
               snapshots={snapshots}
               historial={historial}
+              estadoPorra={estadoPorra}
+              fase={fase}
               recargar={recargar}
               token={sesion.token}
               aviso={sesion.aviso}

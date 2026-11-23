@@ -1,11 +1,19 @@
-import { esFinal, type MomentoHistorial } from '../../lib/scoring';
+import type { MomentoHistorial } from '../../lib/scoring';
 import { hora, ordinal, puntos, textoCambio } from '../../lib/formato';
 import { situacionDe } from '../../lib/panel';
 
 const lista = (n: string[]) => new Intl.ListFormat('es', { type: 'conjunction' }).format(n);
 
 /** Tarjeta con mi situación en la porra. */
-export function MiSituacion({ momento, adminId }: { momento: MomentoHistorial | undefined; adminId: string }) {
+export function MiSituacion({
+  momento,
+  adminId,
+  final,
+}: {
+  momento: MomentoHistorial | undefined;
+  adminId: string;
+  final: boolean;
+}) {
   if (!momento) {
     return (
       <div className="mt-5 rounded-[12px] border border-borde bg-superficie px-4 py-4">
@@ -17,7 +25,6 @@ export function MiSituacion({ momento, adminId }: { momento: MomentoHistorial | 
   const s = situacionDe(momento, adminId);
   if (!s) return null;
   const { fila, relacion } = s;
-  const final = esFinal(momento.snapshot);
 
   let frase: string;
   switch (relacion.tipo) {

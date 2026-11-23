@@ -1,9 +1,8 @@
 import { RUTAS, type Ruta } from '../hooks/useRuta';
 import type { EstadoCarga } from '../hooks/useSnapshots';
 import { hora, porcentaje } from '../lib/formato';
-import { esFinal } from '../lib/scoring';
 import { siguienteFranja } from '../lib/tiempo';
-import type { Snapshot } from '../types';
+import type { Fase, Snapshot } from '../types';
 import { Segmentado } from './Segmentado';
 import { Boton } from './ui';
 
@@ -14,6 +13,7 @@ type Props = {
   conSesion: boolean;
   onIniciarSesion: () => void;
   ultimo: Snapshot | undefined;
+  fase: Fase;
   estado: EstadoCarga;
   error: string | null;
 };
@@ -28,7 +28,7 @@ const PESTANAS: { valor: Ruta; etiqueta: string; href: string }[] = [
  * Título a la izquierda, estado a la derecha y, en el centro, "Iniciar sesión"
  * (o las pestañas Directo · Panel con la sesión iniciada). En el móvil, el centro baja a una segunda fila.
  */
-export function Cabecera({ ruta, navegar, conSesion, onIniciarSesion, ultimo, estado, error }: Props) {
+export function Cabecera({ ruta, navegar, conSesion, onIniciarSesion, ultimo, fase, estado, error }: Props) {
   const centro = 'col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1';
   return (
     <header className="mx-auto w-full max-w-[720px] px-4 pt-5 pb-2 sm:pt-7">
@@ -62,7 +62,7 @@ export function Cabecera({ ruta, navegar, conSesion, onIniciarSesion, ultimo, es
           )
         )}
         <div className="col-start-2 row-start-1 justify-self-end text-right sm:col-start-3">
-          <Estado ultimo={ultimo} estado={estado} error={error} />
+          <Estado ultimo={ultimo} fase={fase} estado={estado} error={error} />
         </div>
       </div>
     </header>
@@ -74,18 +74,26 @@ function Punto({ tipo }: { tipo: 'directo' | 'final' | 'apagado' }) {
   return <span aria-hidden className={`inline-block size-[7px] shrink-0 rounded-full ${color} ${tipo === 'directo' ? 'pulso' : ''}`} />;
 }
 
-function Estado({ ultimo, estado, error }: Pick<Props, 'ultimo' | 'estado' | 'error'>) {
+function Estado({ ultimo, fase, estado, error }: Pick<Props, 'ultimo' | 'fase' | 'estado' | 'error'>) {
   let principal: string;
   let secundaria: string | null = null;
   let punto: 'directo' | 'final' | 'apagado' = 'apagado';
 
   if (estado === 'cargando') {
     principal = 'Conectando…';
-  } else if (!ultimo) {
-    principal = estado === 'error' ? 'Sin conexión' : 'Esperando datos';
-  } else if (esFinal(ultimo)) {
+  } else if (estado === 'error' && !ultimo) {
+    principal = 'Sin conexión';
+  } else if (fase === 'cerrada') {
     principal = 'Resultado final';
     punto = 'final';
+  } else if (fase === 'espera') {
+    principal = 'Esperando datos';
+  } else if (!ultimo) {
+    // Escrutinio iniciado, pero aún sin datos
+    punto = 'directo';
+    principal = 'Escrutinio en curso';
+    const siguiente = siguienteFranja(new Date().toISOString());
+    if (siguiente) secundaria = `Primer dato hacia las ${siguiente.etiqueta}`;
   } else {
     punto = 'directo';
     principal =
@@ -93,7 +101,7 @@ function Estado({ ultimo, estado, error }: Pick<Props, 'ultimo' | 'estado' | 'er
         ? `${hora(ultimo.momento)} · Sondeo`
         : `${hora(ultimo.momento)} · ${porcentaje(ultimo.escrutado)} escrutado`;
     const siguiente = siguienteFranja(ultimo.momento);
-    if (siguiente) secundaria = `Próximo hacia las ${siguiente.etiqueta}`;
+    if (siguiente && ultimo.escrutado < 100) secundaria = `Próximo hacia las ${siguiente.etiqueta}`;
   }
   if (error && ultimo) secundaria = 'Sin conexión · reintentando';
 

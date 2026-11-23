@@ -6,7 +6,7 @@ Gana quien menos se desvía.
 
 - **Directo** (`/`), la única página para todos:
   - **Último resultado**: barra de 350 escaños con la mayoría absoluta, participación y % escrutado.
-  - **Clasificación** («Resultado final» al llegar al 100 %): al tocar a alguien se abre su desglose
+  - **Clasificación** («Resultado final» cuando el administrador pulsa «Escrutinio terminado»): al tocar a alguien se abre su desglose
     (Tu apuesta · Resultado actual · Desviación).
   - **Evolución**: gráfica por posición o por desviación, una línea de color por participante con su nombre al final.
   - **Eventos importantes**: la noche contada hora a hora, lo más reciente arriba, con como mucho 3 eventos por hora. Recoge cambios de líder,
@@ -32,7 +32,7 @@ Para cada participante y cada resultado:
 - **Desviación total** = |PP| + |PSOE| + |Vox| + |FA| + |Otros| + |participación|. Un punto de participación pesa lo mismo que un escaño.
 - Las desviaciones **no se compensan**: +4 en el PP y −4 en el PSOE son 8, no 0.
 - Gana la menor desviación total. Los empates comparten posición (1, 1, 3…); si se llega así al final, hay varios ganadores.
-- La participación que cuenta es la del Ministerio del Interior la noche electoral (sin CERA). El resultado final es el dato con el 100 % escrutado.
+- La participación que cuenta es la del Ministerio del Interior la noche electoral (sin CERA). El resultado final es el último dato cuando el administrador pulsa «Escrutinio terminado».
 
 Todo se calcula en centésimas enteras (sin errores de coma flotante) en `src/lib/scoring.ts`.
 
@@ -130,19 +130,23 @@ Si falta la variable, el panel avisa: «Falta configurar la variable de entorno 
 - [ ] Todas las porras están en `src/data/porras.ts` y `npm run build` pasa sin errores.
 - [ ] La web está desplegada y `ADMIN_TOKEN` está definido en Netlify (después, *Trigger deploy*).
 - [ ] Desde el móvil, **Iniciar sesión** (arriba, en el centro) con la contraseña: aparece la pestaña **Panel**.
-- [ ] **Cargar datos de prueba**: crea un sondeo a las 20:00 y datos de escrutinio a las 21:00, 22:00, 23:00 y 00:00 (100 %).
-- [ ] Revisa Directo en el móvil y en el ordenador: clasificación, desglose, gráfica, eventos y «Resultado final».
+- [ ] **Cargar datos de prueba**: inicia el escrutinio y crea un sondeo a las 20:00 y datos a las 21:00, 22:00, 23:00 y 00:00 (100 %).
+- [ ] Revisa Directo en el móvil y en el ordenador: clasificación, desglose, gráfica y eventos.
 - [ ] Prueba a corregir un dato (aparece «corregido a las…») y a borrar otro.
-- [ ] **Borrar todo** (escribe `BORRAR`). Directo vuelve a mostrar las porras en orden alfabético y «Esperando datos».
+- [ ] Pulsa **Escrutinio terminado** y comprueba «Resultado final» y la victoria en los eventos; luego **Reabrir escrutinio**.
+- [ ] **Borrar todo** (escribe `BORRAR`): borra los datos y deja la porra en «Esperando datos», con las porras en orden alfabético.
 
 **El domingo 29**
 
+- [ ] Al empezar el recuento: **Iniciar escrutinio** (en el Panel). Todos verán «Escrutinio en curso» y la hora del primer dato.
 - [ ] 20:00 (opcional): mete la encuesta a pie de urna como tipo **Sondeo**.
 - [ ] Desde el inicio del escrutinio, **un dato por hora**: elige la franja (o deja la hora por defecto), pon el % escrutado,
       los escaños de PP, PSOE, Vox y FA (Otros se calcula solo) y la participación del Ministerio del Interior (sin CERA).
       Mira la vista previa y guarda.
 - [ ] Si te equivocas: **Editar** en la lista de datos. Todos verán «corregido a las HH:MM».
-- [ ] Último dato con el **100 % escrutado**: la web pasa a «Resultado final» y marca a quien gana (o a quienes ganan, si hay empate).
+- [ ] Al acabar: **Escrutinio terminado**. Pide confirmación y dice quién ganará. El último dato pasa a ser el
+      resultado final para todos: «Resultado final», la victoria y los aciertos en los eventos. Se puede cerrar aunque
+      el escrutinio se quede en 99,9x %, y si hace falta corregir algo, **Reabrir escrutinio**.
 
 La web de cada participante consulta los datos cada 60 segundos mientras la pestaña está visible, y al volver a ella.
 
@@ -158,12 +162,15 @@ La web de cada participante consulta los datos cada 60 segundos mientras la pest
 | `DELETE` | `/api/snapshots/:id` | Borra un dato | Sí |
 | `DELETE` | `/api/snapshots` | Borra todos | Sí |
 | `GET` | `/api/sesion` | Comprueba la contraseña al iniciar sesión | Sí |
+| `GET` | `/api/estado` | Estado del escrutinio: `{ iniciadoEn, cerradoEn }` | No |
+| `POST` | `/api/estado` | `{ "accion": "iniciar" \| "cerrar" \| "reabrir" \| "reiniciar" }` | Sí |
 
 Token: cabecera `Authorization: Bearer <ADMIN_TOKEN>`. Los errores responden con `{ "error": "mensaje en español" }`
 (400 si los datos no cuadran, 401 sin permiso, 409 si ya hay un dato a esa hora).
 No existe ningún endpoint para modificar apuestas.
 
-Los datos se guardan en Netlify Blobs: almacén `porra-29n`, clave `snapshots` (un array JSON ordenado por hora).
+Los datos se guardan en Netlify Blobs: almacén `porra-29n`, clave `snapshots` (un array JSON ordenado por hora)
+y clave `estado` (cuándo se inició y se cerró el escrutinio).
 Las escrituras usan concurrencia optimista (ETag) para que dos guardados seguidos no se pisen.
 
 ---
@@ -174,6 +181,7 @@ Las escrituras usan concurrencia optimista (ETag) para que dos guardados seguido
 netlify.toml                    build, Node, regla SPA (/admin) y cabeceras
 netlify/functions/snapshots.ts  función /api/snapshots (conecta la lógica con Blobs)
 netlify/functions/sesion.ts     función /api/sesion
+netlify/functions/estado.ts     función /api/estado (iniciar / cerrar el escrutinio)
 netlify/lib/                    lógica HTTP probada sin Netlify, almacén (Blobs / memoria), autenticación
 scripts/validate-porras.ts      validación previa al build
 src/config/eleccion.ts          escaños, mayoría, bloques, administrador y franjas

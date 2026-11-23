@@ -1,25 +1,30 @@
 /**
  * Un color por participante para la gráfica de evolución (y el punto junto a su nombre).
- * Paleta validada sobre #0b0b0d: banda de luminosidad, croma, separación en daltonismo y en
- * visión normal entre vecinos, y contraste ≥ 3:1 (≥ 5,8:1 como texto).
- * El color sigue a la persona (orden alfabético), nunca a su posición.
+ *
+ * Diez familias de color con nombre propio (azul, rojo, verde, morado, naranja, verde azulado,
+ * rosa, lima, celeste y lavanda), ajustadas para que CUALQUIER pareja se distinga sobre el
+ * fondo oscuro (ΔE OKLab ≥ 13 en visión normal, ≥ 9 con deuteranopía) y lejos del ámbar
+ * reservado al líder.
+ *
+ * El color se asigna por orden de aparición en src/data/porras.ts: quien se añada al final
+ * no le cambia el color a nadie. Si hay más de 10 participantes, los colores se repiten
+ * (el nombre al final de cada línea sigue identificando a cada uno).
  */
 import type { Porra } from '../types';
-import { ordenAlfabetico } from './scoring';
 
 export const COLORES_PERSONA = [
-  '#4d97de',
-  '#65a556',
-  '#b576c3',
-  '#cb7d34',
-  '#00a9b1',
-  '#d46e80',
-  '#8b85de',
-  '#a5931b',
-  '#00a3c9',
-  '#d67161',
+  '#558ac0', // azul
+  '#f36164', // rojo
+  '#92fd69', // verde
+  '#9657e8', // morado
+  '#bd6710', // naranja
+  '#2fb39a', // verde azulado
+  '#f099ba', // rosa
+  '#c4c50f', // amarillo lima
+  '#5bcdf9', // celeste
+  '#9f94fd', // lavanda
 ] as const;
 
 export function coloresPorPersona(porras: readonly Porra[]): Record<string, string> {
-  return Object.fromEntries(ordenAlfabetico(porras).map((p, i) => [p.id, COLORES_PERSONA[i % COLORES_PERSONA.length]]));
+  return Object.fromEntries(porras.map((p, i) => [p.id, COLORES_PERSONA[i % COLORES_PERSONA.length]]));
 }

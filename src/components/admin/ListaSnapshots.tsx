@@ -10,12 +10,14 @@ import { Boton } from '../ui';
 type Props = {
   snapshots: readonly Snapshot[];
   editandoId: string | null;
+  /** Con la porra cerrada no se puede editar ni borrar. */
+  bloqueado?: boolean;
   onEditar: (s: Snapshot) => void;
   onBorrar: (s: Snapshot) => Promise<void>;
 };
 
 /** Datos introducidos, del más reciente al más antiguo, con editar y borrar. */
-export function ListaSnapshots({ snapshots, editandoId, onEditar, onBorrar }: Props) {
+export function ListaSnapshots({ snapshots, editandoId, bloqueado = false, onEditar, onBorrar }: Props) {
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [borrando, setBorrando] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function ListaSnapshots({ snapshots, editandoId, onEditar, onBorrar }: Pr
                     {s.tipo === 'sondeo' ? 'sondeo' : `${porcentaje(s.escrutado)} escrutado`}
                   </span>
                 </p>
-                {confirmando !== s.id && (
+                {!bloqueado && confirmando !== s.id && (
                   <div className="flex shrink-0 gap-2">
                     <Boton onClick={() => onEditar(s)} disabled={editandoId === s.id}>
                       Editar

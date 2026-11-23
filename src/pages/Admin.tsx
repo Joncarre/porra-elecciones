@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Acceso } from '../components/admin/Acceso';
+import { ControlEscrutinio } from '../components/admin/ControlEscrutinio';
 import { Formulario } from '../components/admin/Formulario';
 import { Franjas } from '../components/admin/Franjas';
 import { ListaSnapshots } from '../components/admin/ListaSnapshots';
@@ -10,12 +11,14 @@ import { ELECCION } from '../config/eleccion';
 import * as api from '../lib/api';
 import { generarDatosPrueba } from '../lib/datosPrueba';
 import type { MomentoHistorial } from '../lib/scoring';
-import type { EntradaSnapshot, Porra, Snapshot } from '../types';
+import type { AccionEstado, EntradaSnapshot, EstadoPorra, Fase, Porra, Snapshot } from '../types';
 
 type Datos = {
   porras: readonly Porra[];
   snapshots: Snapshot[];
   historial: MomentoHistorial[];
+  estadoPorra: EstadoPorra;
+  fase: Fase;
   recargar: () => Promise<void>;
 };
 
@@ -40,6 +43,8 @@ function Panel({
   porras,
   snapshots,
   historial,
+  estadoPorra,
+  fase,
   recargar,
   token,
   onCerrarSesion,
@@ -69,15 +74,27 @@ function Panel({
     if (editando?.id === s.id) setEditando(null);
   };
 
-  const borrarTodo = async () => {
-    await escribir(() => api.borrarTodos(token));
+  const cambiarEstado = async (accion: AccionEstado) => {
+    await escribir(() => api.cambiarEstado(token, accion));
     setEditando(null);
   };
 
+  /** Deja la porra como recién estrenada: sin datos y "Esperando datos". */
+  const borrarTodo = async () => {
+    await escribir(async () => {
+      await api.borrarTodos(token);
+      await api.cambiarEstado(token, 'reiniciar');
+    });
+    setEditando(null);
+  };
+
+  /** Datos de prueba con el escrutinio iniciado (para ensayar también el cierre). */
   const cargarPrueba = async (progreso: (hechos: number, total: number) => void) => {
     const datos = generarDatosPrueba(porras);
     await escribir(async () => {
       await api.borrarTodos(token);
+      await api.cambiarEstado(token, 'reiniciar');
+      await api.cambiarEstado(token, 'iniciar');
       for (let i = 0; i < datos.length; i++) {
         progreso(i + 1, datos.length);
         await api.crearSnapshot(token, datos[i]);
@@ -85,6 +102,8 @@ function Panel({
     });
     setEditando(null);
   };
+
+  const cerrada = fase === 'cerrada';
 
   return (
     <div className="pt-6">
@@ -95,21 +114,37 @@ function Panel({
         </Boton>
       </div>
 
-      <MiSituacion momento={historial[historial.length - 1]} adminId={ELECCION.adminId} />
+      <ControlEscrutinio estado={estadoPorra} fase={fase} ultimo={historial[historial.length - 1]} onAccion={cambiarEstado} />
 
-      <Franjas snapshots={snapshots} onElegir={(iso) => setPeticionHora((p) => ({ iso, n: (p?.n ?? 0) + 1 }))} />
+      <MiSituacion momento={historial[historial.length - 1]} adminId={ELECCION.adminId} final={cerrada} />
 
-      <Formulario
-        porras={porras}
+      {cerrada ? (
+        <p className="mt-8 rounded-[12px] border border-borde px-4 py-3 text-[14px] text-secundario">
+          La porra está cerrada: para meter o corregir datos, pulsa «Reabrir escrutinio».
+        </p>
+      ) : (
+        <>
+          <Franjas snapshots={snapshots} onElegir={(iso) => setPeticionHora((p) => ({ iso, n: (p?.n ?? 0) + 1 }))} />
+
+          <Formulario
+            porras={porras}
+            snapshots={snapshots}
+            editando={editando}
+            peticionHora={peticionHora}
+            onGuardar={guardar}
+            onEditar={setEditando}
+            onCancelarEdicion={() => setEditando(null)}
+          />
+        </>
+      )}
+
+      <ListaSnapshots
         snapshots={snapshots}
-        editando={editando}
-        peticionHora={peticionHora}
-        onGuardar={guardar}
+        editandoId={editando?.id ?? null}
+        bloqueado={cerrada}
         onEditar={setEditando}
-        onCancelarEdicion={() => setEditando(null)}
+        onBorrar={borrar}
       />
-
-      <ListaSnapshots snapshots={snapshots} editandoId={editando?.id ?? null} onEditar={setEditando} onBorrar={borrar} />
 
       <Mantenimiento total={snapshots.length} onBorrarTodo={borrarTodo} onCargarPrueba={cargarPrueba} />
 
