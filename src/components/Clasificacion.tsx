@@ -83,7 +83,7 @@ function Fila({ fila, real, cambio, final, color, decimales, abierta, resaltada,
         onClick={onAlternar}
         onPointerEnter={(e) => e.pointerType === 'mouse' && onHover(porra.id)}
         onPointerLeave={(e) => e.pointerType === 'mouse' && onHover(null)}
-        className="grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 py-3.5 text-left sm:px-1"
+        className="grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 px-4 py-3.5 text-left"
       >
         <span className={`font-mono text-[13px] ${lider ? 'text-acento' : 'text-secundario'}`}>
           <span className="sr-only">Posición </span>
@@ -99,7 +99,7 @@ function Fila({ fila, real, cambio, final, color, decimales, abierta, resaltada,
           )}
         </span>
         <CambioPuesto cambio={cambio} className="w-9" />
-        <span className={`min-w-[4.5rem] text-right font-display text-[26px] leading-none font-semibold ${colorLider}`}>
+        <span className={`min-w-[3.75rem] text-right font-display text-[20px] leading-none font-semibold ${colorLider}`}>
           <span className="sr-only">Desviación total </span>
           {puntos(desviacion.totalCent, decimales)}
         </span>
@@ -130,7 +130,7 @@ function Desglose({ fila, real, final }: { fila: FilaClasificacion; real: Result
   const cabecera = 'pb-1.5 text-center text-[11px] font-normal leading-tight text-secundario';
 
   return (
-    <div className="px-4 pb-4 sm:pr-4 sm:pl-[calc(1.75rem+1.5rem)]">
+    <div className="px-4 pb-4 sm:pl-[calc(1rem+1.75rem+0.75rem)]">
       <table className="w-full max-w-md table-fixed border-collapse text-[13px]">
         <caption className="sr-only">
           Desglose de {porra.nombre}: apuesta, {final ? 'resultado final' : 'resultado actual'} y desviación
