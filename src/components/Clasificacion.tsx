@@ -126,18 +126,24 @@ function Fila({ fila, real, cambio, final, color, decimales, abierta, resaltada,
 
 function Desglose({ fila, real, final }: { fila: FilaClasificacion; real: Resultado; final: boolean }) {
   const { porra, desviacion } = fila;
-  const celda = 'py-1 text-right font-mono text-[13px]';
-  const cabecera = 'pb-1.5 text-right text-[11px] font-normal leading-tight text-secundario';
+  const celda = 'py-1 text-center font-mono text-[13px]';
+  const cabecera = 'pb-1.5 text-center text-[11px] font-normal leading-tight text-secundario';
 
   return (
-    <div className="pb-4 sm:pl-[calc(1.75rem+1rem)]">
-      <table className="w-full max-w-md border-collapse text-[13px]">
+    <div className="px-4 pb-4 sm:pr-4 sm:pl-[calc(1.75rem+1.5rem)]">
+      <table className="w-full max-w-md table-fixed border-collapse text-[13px]">
         <caption className="sr-only">
           Desglose de {porra.nombre}: apuesta, {final ? 'resultado final' : 'resultado actual'} y desviación
         </caption>
+        <colgroup>
+          <col className="w-[28%]" />
+          <col />
+          <col />
+          <col />
+        </colgroup>
         <thead>
           <tr>
-            <th scope="col" className={`${cabecera} text-left`}>
+            <th scope="col" className={`${cabecera} !text-left`}>
               <span className="sr-only">Bloque</span>
             </th>
             <th scope="col" className={cabecera}>
@@ -164,7 +170,7 @@ function Desglose({ fila, real, final }: { fila: FilaClasificacion; real: Result
                 </th>
                 <td className={`${celda} text-secundario`}>{porra.escanos[b.id]}</td>
                 <td className={celda}>{real.escanos[b.id]}</td>
-                <td className={`${celda} w-[4.5rem] ${d === 0 ? 'text-secundario' : ''}`}>
+                <td className={`${celda} ${d === 0 ? 'text-secundario' : ''}`}>
                   <span aria-hidden>{conSigno(d)}</span>
                   <span className="sr-only">{fraseBloque(b, d, porra.nombre)}</span>
                 </td>
