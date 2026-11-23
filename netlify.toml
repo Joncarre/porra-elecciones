@@ -1,0 +1,35 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Desarrollo local: `netlify dev` arranca Vite y emula Functions y Blobs.
+[dev]
+  framework = "#custom"
+  command = "npm run dev:vite"
+  targetPort = 5173
+  port = 8888
+
+# Regla SPA: solo la ruta del panel. Así /api/* nunca acaba en index.html
+# (las funciones con `config.path` atienden /api/snapshots y /api/sesion).
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Referrer-Policy = "same-origin"
+    X-Content-Type-Options = "nosniff"

@@ -1,0 +1,132 @@
+@import 'tailwindcss';
+
+/* `static`: emite siempre todas las variables (los colores de bloque se usan desde src/config). */
+@theme static {
+  /* Tipografía */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Superficies */
+  --color-fondo: #0b0b0d;
+  --color-superficie: #131316;
+  --color-superficie-2: #1a1a1f;
+  --color-borde: rgb(255 255 255 / 0.07);
+  --color-borde-fuerte: rgb(255 255 255 / 0.13);
+
+  /* Texto (todos ≥ AA sobre el fondo) */
+  --color-texto: #ededef;
+  --color-secundario: #8b8b94;
+
+  /* Acento cálido: solo líder/ganador e indicador de directo */
+  --color-acento: #f0b65a;
+  --color-acento-suave: rgb(240 182 90 / 0.12);
+
+  /* Bloques, algo desaturados para fondo oscuro (ajustables).
+     Validados sobre #0b0b0d: separación en visión normal OK. Rojo/verde no alcanzan la separación
+     para daltonismo y el amarillo del Frente Amplio es más claro que la banda recomendada
+     (inevitable con colores de partido): por eso el nombre y la cifra acompañan siempre al color. */
+  --color-pp: #5b8fd6;
+  --color-psoe: #e26a5f;
+  --color-vox: #468737;
+  --color-fa: #e3c94a;
+  --color-otros: #6e6e78;
+
+  /* Error de formulario (sobrio) */
+  --color-error: #e08a7e;
+
+  /* Cambio de puesto en la clasificación (siempre con ▲/▼ y la cifra, nunca solo color) */
+  --color-sube: #5cc37e;
+  --color-baja: #ec6a5e;
+
+  --radius-tarjeta: 12px;
+  --radius-control: 10px;
+}
+
+@layer base {
+  html {
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Números siempre tabulares */
+  body,
+  input,
+  button,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: rgb(255 255 255 / 0.2);
+  }
+
+  /* Foco en blanco: el ámbar queda reservado para el líder y el indicador de directo. */
+  :focus-visible {
+    outline: 2px solid var(--color-texto);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+@utility etiqueta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-secundario);
+}
+
+@keyframes latido {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+@utility pulso {
+  animation: latido 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
