@@ -48,14 +48,12 @@ export const PORRAS: Porra[] = [
     participacion: 82,
   },
 
-  // ⚠️ PENDIENTE: la porra de Varo suma 368 (sobran 18 escaños). Descoméntala cuando la corrija.
-  // {
-  //   id: 'varo',
-  //   nombre: 'Varo',
-  //   escanos: { pp: 145, psoe: 125, vox: 58, fa: 18, otros: 22 },
-  //   participacion: 81,
-  // },
-
+  {
+    id: 'varo',
+    nombre: 'Varo',
+    escanos: { pp: 140, psoe: 120, vox: 54, fa: 14, otros: 22 },
+    participacion: 81,
+  },
   {
     id: 'goyo',
     nombre: 'Goyo',
