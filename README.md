@@ -91,7 +91,7 @@ esté entre 0 y 100, que no se repitan ids y que exista el administrador. Si alg
 `src/config/eleccion.ts`:
 
 - `adminId`: el participante que administra (`'jonathan'`).
-- `franjas`: horas previstas para meter datos (`21:00` … `01:00`). Las horas antes de las 12:00 cuentan como madrugada del día siguiente.
+- `franjas`: horas en las que se meten datos (`20:00` … `02:00`); en el Panel se eligen con un botón, sin fecha. Las horas antes de las 12:00 cuentan como madrugada del día siguiente.
 - `BLOQUES`: orden, nombres y color de cada bloque. Ningún componente tiene partidos escritos a mano.
 
 Los colores (tema oscuro, acento y partidos) están como variables en `@theme`, en `src/index.css`.
@@ -130,7 +130,7 @@ Si falta la variable, el panel avisa: «Falta configurar la variable de entorno 
 - [ ] Todas las porras están en `src/data/porras.ts` y `npm run build` pasa sin errores.
 - [ ] La web está desplegada y `ADMIN_TOKEN` está definido en Netlify (después, *Trigger deploy*).
 - [ ] Desde el móvil, **Iniciar sesión** (arriba, en el centro) con la contraseña: aparece la pestaña **Panel**.
-- [ ] **Cargar datos de prueba**: inicia el escrutinio y crea un sondeo a las 20:00 y datos a las 21:00, 22:00, 23:00 y 00:00 (100 %).
+- [ ] **Cargar datos de prueba**: inicia el escrutinio y crea datos a las 20:00, 21:00, 22:00, 23:00 y 00:00 (100 %).
 - [ ] Revisa Directo en el móvil y en el ordenador: clasificación, desglose, gráfica y eventos.
 - [ ] Prueba a corregir un dato (aparece «corregido a las…») y a borrar otro.
 - [ ] Pulsa **Escrutinio terminado** y comprueba «Resultado final» y la victoria en los eventos; luego **Reabrir escrutinio**.
@@ -139,8 +139,7 @@ Si falta la variable, el panel avisa: «Falta configurar la variable de entorno 
 **El domingo 29**
 
 - [ ] Al empezar el recuento: **Iniciar escrutinio** (en el Panel). Todos verán «Escrutinio en curso» y la hora del primer dato.
-- [ ] 20:00 (opcional): mete la encuesta a pie de urna como tipo **Sondeo**.
-- [ ] Desde el inicio del escrutinio, **un dato por hora**: elige la franja (o deja la hora por defecto), pon el % escrutado,
+- [ ] Desde el inicio del escrutinio, **un dato por hora** (de 20:00 a 02:00): toca la hora (viene elegida la siguiente), pon el % escrutado,
       los escaños de PP, PSOE, Vox y FA (Otros se calcula solo) y la participación del Ministerio del Interior (sin CERA).
       Mira la vista previa y guarda.
 - [ ] Si te equivocas: **Editar** en la lista de datos. Todos verán «corregido a las HH:MM».

@@ -2,18 +2,18 @@
 import type { Snapshot } from '../types';
 import type { FilaClasificacion, MomentoHistorial } from './scoring';
 import { snapshotEnMomento } from './snapshots';
-import { franjas, horaEnPuntoMasCercana, type Franja } from './tiempo';
+import { franjas, type Franja } from './tiempo';
 
 /**
- * Hora por defecto del formulario: la hora en punto más cercana a ahora; si esa hora ya
- * tiene dato, la siguiente franja libre tras el último dato (o una hora después del último).
+ * Hora preseleccionada en el formulario: la siguiente hora de la noche sin dato
+ * después del último dato (al principio, las 20:00). Si ya están todas, la última.
  */
-export function horaPorDefecto(snapshots: readonly Snapshot[], ahora: Date, lista: readonly Franja[] = franjas()): string {
-  const cercana = horaEnPuntoMasCercana(ahora);
-  if (!snapshotEnMomento(snapshots, cercana)) return cercana;
-  const ultimo = Math.max(...snapshots.map((s) => Date.parse(s.momento)));
-  const libre = lista.find((f) => Date.parse(f.iso) > ultimo && !snapshotEnMomento(snapshots, f.iso));
-  return libre ? libre.iso : new Date(ultimo + 3_600_000).toISOString();
+export function horaPorDefecto(snapshots: readonly Snapshot[], lista: readonly Franja[] = franjas()): string {
+  const ultimo = snapshots.reduce((max, s) => Math.max(max, Date.parse(s.momento)), Number.NEGATIVE_INFINITY);
+  const libre =
+    lista.find((f) => Date.parse(f.iso) > ultimo && !snapshotEnMomento(snapshots, f.iso)) ??
+    lista.find((f) => !snapshotEnMomento(snapshots, f.iso));
+  return (libre ?? lista[lista.length - 1]).iso;
 }
 
 export type Relacion =

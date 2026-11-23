@@ -22,10 +22,10 @@ export const ELECCION = {
   /** Participante que administra la porra (debe existir en src/data/porras.ts). */
   adminId: 'jonathan',
   /**
-   * Franjas horarias previstas para meter datos, en hora de Madrid.
+   * Horas en las que se meten datos (hora de Madrid), del 29 a las 20:00 al 30 a las 02:00.
    * Las horas anteriores a las 12:00 se entienden del día siguiente (madrugada).
    */
-  franjas: ['21:00', '22:00', '23:00', '00:00', '01:00'],
+  franjas: ['20:00', '21:00', '22:00', '23:00', '00:00', '01:00', '02:00'],
   /** Cada cuánto consulta la web si hay datos nuevos (ms). */
   intervaloRefresco: 60_000,
 } as const;

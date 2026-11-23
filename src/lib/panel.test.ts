@@ -47,13 +47,11 @@ describe('situación del administrador', () => {
 describe('franjas del panel', () => {
   const lista = franjas('2026-11-29', ['21:00', '22:00', '23:00', '00:00', '01:00']);
 
-  it('hora por defecto: la más cercana, o la siguiente franja si ya tiene dato', () => {
-    const ahora = new Date('2026-11-29T21:05:00Z'); // 22:05 en Madrid
-    expect(horaPorDefecto([], ahora, lista)).toBe('2026-11-29T21:00:00.000Z');
-    const conDato = [snap('a', '2026-11-29T21:00:00.000Z')];
-    expect(horaPorDefecto(conDato, ahora, lista)).toBe('2026-11-29T22:00:00.000Z'); // 23:00
-    const tarde = [snap('z', '2026-11-30T00:00:00.000Z')]; // 01:00, última franja
-    expect(horaPorDefecto(tarde, new Date('2026-11-30T00:10:00Z'), lista)).toBe('2026-11-30T01:00:00.000Z');
+  it('hora preseleccionada: la siguiente hora sin dato tras el último', () => {
+    expect(horaPorDefecto([], lista)).toBe(lista[0].iso); // sin datos, la primera
+    expect(horaPorDefecto([snap('a', '2026-11-29T20:00:00.000Z')], lista)).toBe('2026-11-29T21:00:00.000Z'); // tras 21:00 → 22:00
+    const todas = lista.map((f, i) => snap(`s${i}`, f.iso));
+    expect(horaPorDefecto(todas, lista)).toBe(lista[lista.length - 1].iso); // todas hechas → la última
   });
 
   it('sin datos, la siguiente es la primera', () => {

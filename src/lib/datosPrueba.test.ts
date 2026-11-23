@@ -4,11 +4,12 @@ import { generarDatosPrueba } from './datosPrueba';
 import { validarEntrada } from './snapshots';
 
 describe('datos de prueba', () => {
-  it('genera sondeo + 4 snapshots válidos y ordenados, el último al 100 %', () => {
+  it('genera 5 datos de escrutinio válidos y ordenados (de 20:00 a 00:00), el último al 100 %', () => {
     for (let i = 0; i < 50; i++) {
       const datos = generarDatosPrueba(PORRAS);
       expect(datos).toHaveLength(5);
-      expect(datos[0].tipo).toBe('sondeo');
+      expect(datos.every((d) => d.tipo === 'escrutinio')).toBe(true);
+      expect(datos[0].escrutado).toBeGreaterThan(0);
       expect(datos[4].escrutado).toBe(100);
       for (const d of datos) {
         const v = validarEntrada(d);

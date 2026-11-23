@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Acceso } from '../components/admin/Acceso';
 import { ControlEscrutinio } from '../components/admin/ControlEscrutinio';
 import { Formulario } from '../components/admin/Formulario';
-import { Franjas } from '../components/admin/Franjas';
 import { ListaSnapshots } from '../components/admin/ListaSnapshots';
 import { Mantenimiento } from '../components/admin/Mantenimiento';
 import { MiSituacion } from '../components/admin/MiSituacion';
@@ -51,7 +50,6 @@ function Panel({
   onSesionCaducada,
 }: Datos & { token: string; onCerrarSesion: () => void; onSesionCaducada: (mensaje: string) => void }) {
   const [editando, setEditando] = useState<Snapshot | null>(null);
-  const [peticionHora, setPeticionHora] = useState<{ iso: string; n: number } | null>(null);
   const yo = porras.find((p) => p.id === ELECCION.adminId);
 
   /** Ejecuta una escritura; si la contraseña deja de valer, vuelve a pedirla. Siempre refresca los datos. */
@@ -123,19 +121,14 @@ function Panel({
           La porra está cerrada: para meter o corregir datos, pulsa «Reabrir escrutinio».
         </p>
       ) : (
-        <>
-          <Franjas snapshots={snapshots} onElegir={(iso) => setPeticionHora((p) => ({ iso, n: (p?.n ?? 0) + 1 }))} />
-
-          <Formulario
-            porras={porras}
-            snapshots={snapshots}
-            editando={editando}
-            peticionHora={peticionHora}
-            onGuardar={guardar}
-            onEditar={setEditando}
-            onCancelarEdicion={() => setEditando(null)}
-          />
-        </>
+        <Formulario
+          porras={porras}
+          snapshots={snapshots}
+          editando={editando}
+          onGuardar={guardar}
+          onEditar={setEditando}
+          onCancelarEdicion={() => setEditando(null)}
+        />
       )}
 
       <ListaSnapshots

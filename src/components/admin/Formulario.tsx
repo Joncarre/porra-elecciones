@@ -3,42 +3,32 @@ import { BLOQUES_PARTIDO, ELECCION } from '../../config/eleccion';
 import { ErrorApi } from '../../lib/api';
 import { borradorDesde, borradorNuevo, entradaDesde, otrosEnVivo, type Borrador } from '../../lib/borrador';
 import { decimalesComunes, hora, porcentaje, puntos } from '../../lib/formato';
-import { horaPorDefecto } from '../../lib/panel';
+import { estadoFranjas, horaPorDefecto } from '../../lib/panel';
 import { calcularHistorial } from '../../lib/scoring';
 import { crearSnapshot, ordenarSnapshots, snapshotEnMomento } from '../../lib/snapshots';
-import { isoAMadridLocal } from '../../lib/tiempo';
+import { franjas } from '../../lib/tiempo';
 import type { EntradaSnapshot, Porra, Snapshot } from '../../types';
 import { CambioPuesto } from '../CambioPuesto';
-import { Segmentado } from '../Segmentado';
 import { Boton, claseEtiqueta, claseInput } from '../ui';
 
 type Props = {
   porras: readonly Porra[];
   snapshots: readonly Snapshot[];
-  /** Snapshot que se está corrigiendo (null = dato nuevo). */
+  /** Dato que se está corrigiendo (null = dato nuevo). */
   editando: Snapshot | null;
-  /** Hora elegida desde la fila de franjas (n cambia en cada toque). */
-  peticionHora: { iso: string; n: number } | null;
   onGuardar: (entrada: EntradaSnapshot, idEditado?: string) => Promise<Snapshot>;
   onEditar: (s: Snapshot) => void;
   onCancelarEdicion: () => void;
 };
 
-const TIPOS = [
-  { valor: 'escrutinio', etiqueta: 'Escrutinio' },
-  { valor: 'sondeo', etiqueta: 'Sondeo' },
-] as const;
-
 const NOMBRES_CAMPO = { pp: 'pp', psoe: 'psoe', vox: 'vox', fa: 'fa' } as const;
+const mismoMinuto = (a: string, b: string) => Math.floor(Date.parse(a) / 60_000) === Math.floor(Date.parse(b) / 60_000);
 
-export function Formulario({ porras, snapshots, editando, peticionHora, onGuardar, onEditar, onCancelarEdicion }: Props) {
+export function Formulario({ porras, snapshots, editando, onGuardar, onEditar, onCancelarEdicion }: Props) {
   const ordenados = useMemo(() => ordenarSnapshots(snapshots), [snapshots]);
   const ultimo = ordenados[ordenados.length - 1];
 
-  const nuevo = (): Borrador => ({
-    ...borradorNuevo(ultimo, new Date()),
-    hora: isoAMadridLocal(horaPorDefecto(snapshots, new Date())),
-  });
+  const nuevo = (): Borrador => borradorNuevo(ultimo, horaPorDefecto(snapshots));
 
   const [borrador, setBorrador] = useState<Borrador>(nuevo);
   const [tocado, setTocado] = useState(false);
@@ -47,7 +37,7 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
   const [exito, setExito] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Mientras no se toque, el formulario se precarga con el último dato (también al llegar datos nuevos).
+  // Mientras no se toque, el formulario se precarga con el último dato y la siguiente hora.
   const claveUltimo = ultimo ? `${ultimo.id}|${ultimo.editadoEn ?? ''}|${snapshots.length}` : 'vacio';
   useEffect(() => {
     if (!editando && !tocado) setBorrador(nuevo());
@@ -63,13 +53,6 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
     }
   }, [editando]);
 
-  useEffect(() => {
-    if (peticionHora) {
-      setBorrador((b) => ({ ...b, hora: isoAMadridLocal(peticionHora.iso) }));
-      setTocado(true);
-    }
-  }, [peticionHora]);
-
   const cambiar = <K extends keyof Borrador>(campo: K, valor: Borrador[K]) => {
     setBorrador((b) => ({ ...b, [campo]: valor }));
     setTocado(true);
@@ -81,7 +64,10 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
   const otros = otrosEnVivo(borrador);
   const entrada = validacion.ok ? validacion.valor : null;
   const duplicado = entrada ? snapshotEnMomento(snapshots, entrada.momento, editando?.id) : undefined;
-  const sondeo = borrador.tipo === 'sondeo';
+
+  // Horas de la noche (y la del dato que se corrige, si no fuera una de ellas).
+  const horas = estadoFranjas(franjas(), snapshots);
+  const horaFuera = borrador.momento && !horas.some((h) => mismoMinuto(h.iso, borrador.momento)) ? borrador.momento : null;
 
   // Vista previa: la clasificación tal y como quedaría con este dato.
   const previa = useMemo(() => {
@@ -98,9 +84,7 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
     setErrorServidor(null);
     try {
       const s = await onGuardar(entrada, editando?.id);
-      setExito(
-        `${editando ? 'Corregido' : 'Guardado'}: ${hora(s.momento)} · ${s.tipo === 'sondeo' ? 'sondeo' : `${porcentaje(s.escrutado)} escrutado`}.`,
-      );
+      setExito(`${editando ? 'Corregido' : 'Guardado'}: ${hora(s.momento)} · ${porcentaje(s.escrutado)} escrutado.`);
       setTocado(false);
       if (editando) onCancelarEdicion();
     } catch (err) {
@@ -130,35 +114,24 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
       )}
 
       <form ref={formRef} onSubmit={guardar} noValidate className="mt-4 space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="f-hora" className={claseEtiqueta}>
-              Hora del dato
-            </label>
-            <input
-              id="f-hora"
-              type="datetime-local"
-              step={60}
-              value={borrador.hora}
-              onChange={(e) => cambiar('hora', e.target.value)}
-              className={`${claseInput} font-mono text-[16px] [color-scheme:dark]`}
-            />
+        <fieldset>
+          <legend className={claseEtiqueta}>Hora del dato</legend>
+          <div className="flex flex-wrap gap-2">
+            {horaFuera && (
+              <BotonHora etiqueta={hora(horaFuera)} elegida hecha={false} siguiente={false} onElegir={() => undefined} />
+            )}
+            {horas.map((h) => (
+              <BotonHora
+                key={h.iso}
+                etiqueta={h.etiqueta}
+                elegida={mismoMinuto(h.iso, borrador.momento)}
+                hecha={h.hecha}
+                siguiente={h.siguiente}
+                onElegir={() => cambiar('momento', h.iso)}
+              />
+            ))}
           </div>
-          <div>
-            <span className={claseEtiqueta} id="f-tipo-etiqueta">
-              Tipo
-            </span>
-            <Segmentado
-              id="tipo-dato"
-              etiquetaAria="Tipo de dato"
-              opciones={TIPOS}
-              valor={borrador.tipo}
-              onCambio={(v) => cambiar('tipo', v)}
-              tamano="grande"
-              className="w-full"
-            />
-          </div>
-        </div>
+        </fieldset>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -170,9 +143,8 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
               inputMode="decimal"
               autoComplete="off"
               enterKeyHint="next"
-              placeholder={sondeo ? '—' : '0–100'}
-              disabled={sondeo}
-              value={sondeo ? '' : borrador.escrutado}
+              placeholder="0–100"
+              value={borrador.escrutado}
               onFocus={seleccionar}
               onChange={(e) => cambiar('escrutado', e.target.value)}
               className={claseInput}
@@ -230,7 +202,7 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
           >
             <span className="flex items-center gap-1.5">
               <span aria-hidden className="size-2 rounded-full" style={{ background: 'var(--color-otros)' }} />
-              Otros (calculado)
+              Otros (se calcula solo)
             </span>
             <span className="font-display text-[19px] font-semibold text-texto">
               {Number.isNaN(otros) ? '—' : otros}
@@ -238,21 +210,6 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
             </span>
           </p>
         </fieldset>
-
-        <div>
-          <label htmlFor="f-nota" className={claseEtiqueta}>
-            Nota <span className="font-normal">(opcional)</span>
-          </label>
-          <input
-            id="f-nota"
-            autoComplete="off"
-            maxLength={280}
-            placeholder="p. ej. fuente: Ministerio del Interior"
-            value={borrador.nota}
-            onChange={(e) => cambiar('nota', e.target.value)}
-            className={`${claseInput} font-sans text-[15px]`}
-          />
-        </div>
 
         {duplicado && (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-error/40 px-3 py-2.5 text-[14px]">
@@ -310,5 +267,40 @@ export function Formulario({ porras, snapshots, editando, peticionHora, onGuarda
         )}
       </form>
     </section>
+  );
+}
+
+/** Botón de hora: elegida (blanco), ya metida (✓) o la siguiente que toca. */
+function BotonHora({
+  etiqueta,
+  elegida,
+  hecha,
+  siguiente,
+  onElegir,
+}: {
+  etiqueta: string;
+  elegida: boolean;
+  hecha: boolean;
+  siguiente: boolean;
+  onElegir: () => void;
+}) {
+  const estado = hecha ? 'ya introducida' : siguiente ? 'la siguiente' : 'pendiente';
+  return (
+    <button
+      type="button"
+      onClick={onElegir}
+      aria-pressed={elegida}
+      aria-label={`${etiqueta}, ${estado}`}
+      className={`flex h-11 min-w-[4.25rem] items-center justify-center gap-1 rounded-[10px] border px-3 font-mono text-[14px] transition-colors ${
+        elegida
+          ? 'border-texto bg-texto font-bold text-fondo'
+          : hecha
+            ? 'border-borde bg-superficie text-secundario hover:text-texto'
+            : 'border-borde-fuerte text-texto hover:bg-superficie'
+      }`}
+    >
+      {hecha && <span aria-hidden>✓</span>}
+      {etiqueta}
+    </button>
   );
 }

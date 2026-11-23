@@ -21,17 +21,16 @@ describe('borrador del panel', () => {
     expect(aNumero('12a')).toBeNaN();
   });
 
-  it('precarga el último snapshot y la hora en punto más cercana', () => {
-    const b = borradorNuevo(ultimo, new Date('2026-11-29T22:04:00Z'));
-    expect(b.hora).toBe('2026-11-29T23:00'); // 23:04 en Madrid → 23:00
+  it('precarga el último dato para la hora elegida', () => {
+    const b = borradorNuevo(ultimo, '2026-11-29T22:00:00.000Z');
+    expect(b.momento).toBe('2026-11-29T22:00:00.000Z');
     expect(b.pp).toBe('133');
     expect(b.participacion).toBe('70,4');
     expect(b.escrutado).toBe('64,5');
-    expect(b.tipo).toBe('escrutinio');
   });
 
   it('sin datos previos, campos vacíos', () => {
-    const b = borradorNuevo(undefined, new Date('2026-11-29T19:00:00Z'));
+    const b = borradorNuevo(undefined, '2026-11-29T19:00:00.000Z');
     expect(b.pp).toBe('');
     expect(entradaDesde(b)).toEqual({ ok: false, error: 'Faltan los escaños de PP.' });
   });
@@ -39,13 +38,12 @@ describe('borrador del panel', () => {
   it('calcula Otros en vivo y avisa si se pasa de 350', () => {
     const b = { ...borradorDesde(ultimo), pp: '200' };
     expect(otrosEnVivo(b)).toBe(-38);
-    const r = entradaDesde(b);
-    expect(r.ok).toBe(false);
+    expect(entradaDesde(b).ok).toBe(false);
     expect(otrosEnVivo(borradorDesde(ultimo))).toBe(29);
   });
 
-  it('convierte a una entrada válida (hora de Madrid → ISO)', () => {
-    const r = entradaDesde({ ...borradorDesde(ultimo), escrutado: '70,25', nota: ' RTVE ' });
+  it('convierte a una entrada de escrutinio válida', () => {
+    const r = entradaDesde({ ...borradorDesde(ultimo), escrutado: '70,25' });
     expect(r).toEqual({
       ok: true,
       valor: {
@@ -54,18 +52,13 @@ describe('borrador del panel', () => {
         escanos: { pp: 133, psoe: 108, vox: 59, fa: 21 },
         participacion: 70.4,
         tipo: 'escrutinio',
-        nota: 'RTVE',
+        nota: undefined,
       },
     });
   });
 
-  it('un sondeo no necesita % escrutado', () => {
-    const r = entradaDesde({ ...borradorDesde(ultimo), tipo: 'sondeo', escrutado: '' });
-    expect(r.ok && r.valor.escrutado).toBe(0);
-  });
-
   it('mensajes claros si faltan datos', () => {
-    expect(entradaDesde({ ...borradorDesde(ultimo), hora: '' })).toEqual({ ok: false, error: 'Indica la hora del dato.' });
+    expect(entradaDesde({ ...borradorDesde(ultimo), momento: '' })).toEqual({ ok: false, error: 'Elige la hora del dato.' });
     expect(entradaDesde({ ...borradorDesde(ultimo), escrutado: '' })).toEqual({ ok: false, error: 'Falta el % escrutado.' });
     expect(entradaDesde({ ...borradorDesde(ultimo), participacion: '' })).toEqual({ ok: false, error: 'Falta la participación.' });
   });
